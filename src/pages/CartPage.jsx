@@ -47,21 +47,27 @@ function CartPage() {
                 <p>No items in cart</p>
             ) : (
                 <>
-                    <ul>
-                        {cart.map((item) => (
-                            <li key={item.id} className="cart-item">
-                                <span>
-                                    {item.name} x {item.quantity} = ₹{item.price * item.quantity}
-                                </span>
-                                <button
-                                    className="remove-btn"
-                                    onClick={() => removeFromCart(item.id)}
-                                >
-                                    Remove One
+            <ul className="cart-list">
+                {cart.map((item) => (
+                    <li key={item.id} className="cart-item">
+
+                    <div className="cart-item-details">
+                        <div><img src={item.img} alt={item.name} className="cart-item-image" /></div>
+                        <div><h4>{item.name}</h4>
+                        <p>₹{item.price} × {item.quantity}</p>
+                        <p><strong>Total:</strong> ₹{item.price * item.quantity}</p>
+
+                        <button
+                        className="remove-btn"
+                        onClick={() => removeFromCart(item.id)}
+                        >
+                        Remove One
                                 </button>
-                            </li>
-                        ))}
-                    </ul>
+                    </div>
+                    </div>
+                    </li>
+                ))}
+            </ul>
                     <h3>Total: ₹{total}</h3>
                     <button className="order-btn" onClick={handleSubmit}>Proceed to Checkout</button>
                     <Modal
