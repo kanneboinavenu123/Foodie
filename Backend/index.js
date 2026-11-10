@@ -5,6 +5,7 @@ const bodyParser = require("body-parser");
 const authRoutes = require("./routes/foodie");
 const contactRoutes = require("./routes/contact");
 const db = require("./db");
+require("dotenv").config();
 
 const app = express();
 
@@ -16,7 +17,8 @@ app.use(bodyParser.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/contact", contactRoutes);
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+
 db.query(
   `CREATE TABLE IF NOT EXISTS contact_messages (
     id INT AUTO_INCREMENT PRIMARY KEY,
