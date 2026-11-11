@@ -1,125 +1,192 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import API_BASE_URL from "../config/app";
 
 const Profile = () => {
-  const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    oldPassword: "",
-    password: "",
-  });
-  const [message, setMessage] = useState("");
+    const navigate = useNavigate();
 
- useEffect(() => {
-  const storedUser = localStorage.getItem("loggedInUser");
-  if (!storedUser) {
-    navigate("/");
-    return;
-  }
+    const [user, setUser] = useState(null);
 
-  const userData = JSON.parse(storedUser);
-  setUser(userData);
+    const [form, setForm] = useState({
+        username: "",
+        email: "",
+        oldPassword: "",
+        password: "",
+    });
 
-  setForm({
-    name: userData.name,
-    email: userData.email,
-    oldPassword: "",
-    password: "",
-  });
-}, []);
+    const [message, setMessage] = useState("");
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value,});
-  };
+    useEffect(() => {
+        const storedUser = localStorage.getItem("loggedInUser");
 
-  const handleUpdate = async (e) => {
-    e.preventDefault();
-
-    if (form.oldPassword !== user.password) {
-      setMessage("❌ Old password is incorrect");
-      return;
-    }
-
-    try {
-      const updatedData = {
-        name: form.name,
-        email: form.email,
-        password: form.password ? form.password : user.password,
-      };
-
-      const response = await fetch(
-        `http://localhost:3000/Details/${user.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(updatedData),
+        if (!storedUser) {
+            navigate("/");
+            return;
         }
-      );
 
-      if (!response.ok) throw new Error("Failed to update profile");
+        try {
+            const userData = JSON.parse(storedUser);
 
-      const updatedUser = await response.json();
+            setUser(userData);
 
-      localStorage.setItem("loggedInUser", JSON.stringify(updatedUser));
+            setForm({
+                username: userData.username || "",
+                email: userData.email || "",
+                oldPassword: "",
+                password: "",
+            });
 
-      setMessage("✔ Profile updated successfully!");
-      setTimeout(() => navigate("/home"), 1500);
+        } catch (error) {
+            localStorage.removeItem("loggedInUser");
+            navigate("/");
+        }
 
-    } catch (error) {
-      setMessage(error.message);
-    }
-  };
+}, [navigate]);
 
-  return (
-    <div className="profile-container">
-      <div className="profile-card">
-        <h1 className="profile-title">Edit Profile</h1>
+    const handleChange = (e) => {
+        setForm({
+            ...form,
+            [e.target.name]: e.target.value,
+        });
+    };
 
-        <form onSubmit={handleUpdate} className="profile-form">
+    const handleUpdate = async (e) => {
+        e.preventDefault();
 
-          <label className="label">Name</label>
-          <input type="text" name="name" value={form.name}
-            onChange={handleChange} className="input" />
+        if (!user) return;
 
-          <label className="label">Email</label>
-          <input type="email" name="email" value={form.email}
-            onChange={handleChange} className="input" />
+        try {
+            const response = await fetch(
+                `${API_BASE_URL}/api/auth/profile`,
+                {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        currentEmail: user.email,
+                        username: form.username,
+                        email: form.email,
+                        oldPassword: form.oldPassword,
+                        password: form.password
+                        }),
+                }
+            );
 
-          {/* 🔐 OLD PASSWORD */}
-          <label className="label">Old Password</label>
-          <input
-            type="password"
-            name="oldPassword"
-            value={form.oldPassword}
-            onChange={handleChange}
-            className="input"
-            required
-          />
+            const data = await response.json();
 
-          {/* 🔑 NEW PASSWORD */}
-          <label className="label">New Password</label>
-          <input
-            type="password"
-            name="password"
-            value={form.password}
-            onChange={handleChange}
-            className="input"
-            placeholder="Enter new password"
-            required
-            autoComplete="new-password"
-          />
+            if (!response.ok) {
+                throw new Error(
+                    data.message || "Failed to update profile"
+                );
+            }
 
-          <button type="submit" className="profile-btn">Save Changes</button>
+            // Store only safe user details.
+            localStorage.setItem(
+                "loggedInUser",
+                JSON.stringify(data.user)
+            );
 
-          {message && <p className="profile-message">{message}</p>}
-        </form>
-      </div>
-    </div>
-  );
+            setUser(data.user);
+
+            setForm({
+                username: data.user.username,
+                email: data.user.email,
+                oldPassword: "",
+                password: "",
+            });
+
+            setMessage("Profile updated successfully!");
+
+        } catch (error) {
+            setMessage(error.message);
+        }
+    };
+
+    return (
+        <div className="profile-container">
+            <div className="profile-card">
+
+                <h1 className="profile-title">
+                    Edit Profile
+                </h1>
+
+                <form
+                    onSubmit={handleUpdate}
+                    className="profile-form"
+                >
+
+                    <label className="label">
+                        Username
+                    </label>
+
+                    <input
+                        type="text"
+                        name="username"
+                        value={form.username}
+                        onChange={handleChange}
+                        className="input"
+                        required
+                    />
+
+                    <label className="label">
+                        Email
+                    </label>
+
+                    <input
+                        type="email"
+                        name="email"
+                        value={form.email}
+                        onChange={handleChange}
+                        className="input"
+                        required
+                    />
+
+                    <label className="label">
+                        Old Password
+                    </label>
+
+                    <input
+                        type="password"
+                        name="oldPassword"
+                        value={form.oldPassword}
+                        onChange={handleChange}
+                        className="input"
+                        required
+                        autoComplete="current-password"
+                    />
+
+                    <label className="label">
+                        New Password (Optional)
+                    </label>
+
+                    <input
+                        type="password"
+                        name="password"
+                        value={form.password}
+                        onChange={handleChange}
+                        className="input"
+                        placeholder="Enter new password"
+                        autoComplete="new-password"
+                    />
+
+                    <button
+                        type="submit"
+                        className="profile-btn"
+                    >
+                        Save Changes
+                    </button>
+
+                    {message && (
+                        <p className="profile-message">
+                            {message}
+                        </p>
+                    )}
+
+                </form>
+            </div>
+        </div>
+    );
 };
 
 export default Profile;
